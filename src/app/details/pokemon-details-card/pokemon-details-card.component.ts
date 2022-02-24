@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ReplaySubject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -13,7 +13,7 @@ import { CaughtService } from 'src/app/shared/services/caught.service';
   templateUrl: './pokemon-details-card.component.html',
   styleUrls: ['./pokemon-details-card.component.scss'],
 })
-export class PokemonDetailsCard implements OnInit {
+export class PokemonDetailsCard implements OnInit, OnDestroy {
   destroyed$ = new ReplaySubject<boolean>(1);
 
   pokemon: PokemonDetails | undefined;

@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { map } from 'rxjs/operators';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ReplaySubject } from 'rxjs';
+import { map, mergeAll, switchMap, takeUntil } from 'rxjs/operators';
 import { Pokemon } from 'src/app/models/pokemon';
 import { CaughtService } from 'src/app/shared/services/caught.service';
 import { PokemonService } from 'src/app/shared/services/pokemon.service';
@@ -9,10 +10,10 @@ import { PokemonService } from 'src/app/shared/services/pokemon.service';
   templateUrl: './pokemons-caughtlist.component.html',
   styleUrls: ['./pokemons-caughtlist.component.scss'],
 })
-export class PokemonsCaughtlistComponent implements OnInit {
-  pokemons: Pokemon[] = [];
+export class PokemonsCaughtlistComponent implements OnInit, OnDestroy {
+  destroyed$ = new ReplaySubject<boolean>(1);
 
-  ids: number[] = [];
+  pokemons: Pokemon[] = [];
 
   constructor(
     private caughtListService: CaughtService,
@@ -20,22 +21,34 @@ export class PokemonsCaughtlistComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.caughtListService.getCaughtList().subscribe((x) => (this.ids = x));
+    this.getPokemonsOnCaughtList();
+  }
 
-    this.ids.forEach((x) =>
-      this.pokemonService
-        .getPokemonDetails(x)
-        .pipe(
-          map(
-            (x) =>
-              ({
-                id: x.id,
-                name: x.name,
-                avatar: x.sprites.front_default,
-              } as Pokemon)
-          )
-        )
-        .subscribe((x) => this.pokemons.push(x))
-    );
+  ngOnDestroy(): void {
+    this.destroyed$.next(true);
+    this.destroyed$.complete();
+  }
+
+  private getPokemonsOnCaughtList(): void {
+    this.caughtListService
+      .getCaughtList()
+      .pipe(
+        switchMap((ids) =>
+          ids.map((id) => this.pokemonService.getPokemonDetails(id))
+        ),
+        mergeAll(),
+        map(
+          (x) =>
+            ({
+              id: x.id,
+              name: x.name,
+              avatar: x.sprites.front_default,
+            } as Pokemon)
+        ),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe((x) => {
+        this.pokemons.push(x);
+      });
   }
 }
