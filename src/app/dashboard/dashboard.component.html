@@ -1,0 +1,10 @@
+<div class="container">
+    <app-search-bar (searchEmmit)="onSearch($event)"></app-search-bar>
+</div>
+<div class="search-results" infiniteScroll [infiniteScrollDistance]="2" [infiniteScrollUpDistance]="1.5"
+    [infiniteScrollThrottle]="50" (scrolled)="onScrollDown()">
+    <ng-container *ngFor="let pokemon of pokemons | searchFilter: searchText">
+        <app-pokemon-card (click)="onPokemonSelect(pokemon.id)" [pokemon]="pokemon">
+        </app-pokemon-card>
+    </ng-container>
+</div>
